@@ -1,0 +1,49 @@
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity controller is
+    port (
+        clk, rst, start : in std_logic;
+        k_last, j_last, i_last : in std_logic;
+
+        en_i, en_j, en_k : out std_logic;
+        clr_k, clr_j, clr_mac : out std_logic;
+        write_result, done : out std_logic
+    );
+end controller;
+
+architecture rtl of controller is
+    type state_t is (IDLE, INIT, CALC, NEXTT, FINISH);
+    signal state : state_t := IDLE;
+begin
+    process(clk, rst)
+    begin
+        if rst='1' then
+            state <= IDLE;
+        elsif rising_edge(clk) then
+            case state is
+                when IDLE   => if start='1' then state<=INIT; end if;
+                when INIT   => state <= CALC;
+                when CALC   => if k_last='1' then state<=NEXTT; end if;
+                when NEXTT  =>
+                    if i_last='1' and j_last='1' then
+                        state <= FINISH;
+                    else
+                        state <= INIT;
+                    end if;
+                when FINISH => state <= IDLE;
+            end case;
+        end if;
+    end process;
+
+    en_k  <= '1' when state=CALC else '0';
+    clr_k <= '1' when state=INIT else '0';
+    clr_mac <= '1' when state=INIT else '0';
+
+    write_result <= '1' when state=NEXTT else '0';
+    done <= '1' when state=FINISH else '0';
+
+    en_j  <= '1' when state=NEXTT and j_last='0' else '0';
+    en_i  <= '1' when state=NEXTT and j_last='1' else '0';
+    clr_j <= '1' when state=NEXTT and j_last='1' else '0';
+end rtl;

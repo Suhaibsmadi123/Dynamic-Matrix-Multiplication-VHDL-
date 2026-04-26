@@ -1,0 +1,33 @@
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity mac is
+    port (
+        clk : in std_logic;
+        rst : in std_logic;
+        en  : in std_logic;
+        clr : in std_logic;
+        a   : in integer;
+        b   : in integer;
+        acc : out integer
+    );
+end mac;
+
+architecture rtl of mac is
+    signal acc_reg : integer := 0;
+begin
+    process(clk,rst)
+    begin
+        if rst='1' then
+            acc_reg <= 0;
+        elsif rising_edge(clk) then
+            if clr='1' then
+                acc_reg <= 0;
+            elsif en='1' then
+                acc_reg <= acc_reg + a*b;
+            end if;
+        end if;
+    end process;
+
+    acc <= acc_reg;
+end rtl;

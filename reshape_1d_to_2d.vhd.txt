@@ -1,0 +1,29 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use work.matrix_pkg.all;
+
+entity reshape_1d_to_2d is
+    generic (
+        ROWS : integer;
+        COLS : integer
+    );
+    port (
+        A_flat : in  std_logic_vector(ROWS*COLS*DATA_WIDTH-1 downto 0);
+        A_2D   : out array_2d_t(0 to ROWS-1, 0 to COLS-1)
+    );
+end entity;
+
+architecture rtl of reshape_1d_to_2d is
+begin
+    process(A_flat)
+        variable idx : integer := 0;
+    begin
+        idx := 0;
+        for i in 0 to ROWS-1 loop
+            for j in 0 to COLS-1 loop
+                A_2D(i,j) <= A_flat((idx+1)*DATA_WIDTH-1 downto idx*DATA_WIDTH);
+                idx := idx + 1;
+            end loop;
+        end loop;
+    end process;
+end architecture;

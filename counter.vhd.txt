@@ -1,0 +1,38 @@
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity counter is
+    generic ( MAX_VAL : integer );
+    port (
+        clk  : in  std_logic;
+        rst  : in  std_logic;
+        en   : in  std_logic;
+        clr  : in  std_logic;
+        val  : out integer;
+        last : out std_logic
+    );
+end counter;
+
+architecture rtl of counter is
+    signal cnt : integer := 0;
+begin
+    process(clk, rst)
+    begin
+        if rst='1' then
+            cnt <= 0;
+        elsif rising_edge(clk) then
+            if clr='1' then
+                cnt <= 0;
+            elsif en='1' then
+                if cnt < MAX_VAL-1 then
+                    cnt <= cnt + 1;
+                else
+                    cnt <= 0;
+                end if;
+            end if;
+        end if;
+    end process;
+
+    val  <= cnt;
+    last <= '1' when cnt = MAX_VAL-1 else '0';
+end rtl;

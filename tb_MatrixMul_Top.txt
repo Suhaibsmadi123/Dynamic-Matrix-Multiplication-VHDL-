@@ -1,0 +1,66 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use work.matrix_pkg.all;
+
+entity tb_MatrixMul_Top is
+end entity;
+
+architecture sim of tb_MatrixMul_Top is
+
+    constant R : integer := 3;
+    constant N : integer := 3;
+    constant C : integer := 3;
+
+    signal clk   : std_logic := '0';
+    signal rst   : std_logic := '1';
+    signal start : std_logic := '0';
+
+    signal A_flat : std_logic_vector(R*N*DATA_WIDTH-1 downto 0);
+    signal B_flat : std_logic_vector(N*C*DATA_WIDTH-1 downto 0);
+
+    signal final_result : std_logic_vector(R*C*DATA_WIDTH-1 downto 0);
+    signal done : std_logic;
+
+    constant CLK_PERIOD : time := 10 ns;
+
+begin
+
+    clk <= not clk after CLK_PERIOD/2;
+
+    DUT : entity work.MatrixMul_Top
+        generic map(R => R, N => N, C => C)
+        port map(clk,rst,start,A_flat,B_flat,final_result,done);
+
+    stim_proc : process
+    begin
+        rst <= '1';
+        wait for 30 ns;
+        rst <= '0';
+        wait for 20 ns;
+
+        -- Single-row hex input
+        A_flat <= x"000000010000000200000003000000040000000500000006000000070000000800000009";
+        B_flat <= x"000000010000000200000003000000040000000500000006000000070000000800000009";
+
+        wait for 20 ns;
+
+        start <= '1';
+        wait for CLK_PERIOD;
+        start <= '0';
+
+        wait until done='1';
+        wait for 20 ns;
+
+        -- Print result
+        report "===== MATRIX RESULT (HEX) =====";
+        for i in 0 to R*C-1 loop
+            report "C(" & integer'image(i) & ") = 0x" &
+                to_hstring(final_result((i+1)*DATA_WIDTH-1 downto i*DATA_WIDTH));
+        end loop;
+
+        report "===== END SIMULATION =====";
+        wait;
+    end process;
+
+end architecture;

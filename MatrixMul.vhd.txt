@@ -1,0 +1,60 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use work.matrix_pkg.all;
+
+entity MatrixMul is
+    generic ( R, N, C : integer );
+    port (
+        clk, rst, start : in std_logic;
+        A : in integer_matrix(0 to R-1,0 to N-1);
+        B : in integer_matrix(0 to N-1,0 to C-1);
+        result : out integer_matrix(0 to R-1,0 to C-1);
+        done : out std_logic
+    );
+end entity;
+
+architecture structural of MatrixMul is
+    signal i,j,k : integer;
+    signal i_last,j_last,k_last : std_logic;
+    signal en_i,en_j,en_k,clr_k,clr_j,clr_mac,write_result : std_logic;
+    signal mac_out : integer;
+    signal a_sig, b_sig : integer;
+begin
+
+    process(A,B,i,j,k,en_k)
+    begin
+        if en_k='1' then
+            a_sig <= A(i,k);
+            b_sig <= B(k,j);
+        else
+            a_sig <= 0;
+            b_sig <= 0;
+        end if;
+    end process;
+
+    I_CNT : entity work.counter generic map(R)
+        port map(clk,rst,en_i,'0',i,i_last);
+
+    J_CNT : entity work.counter generic map(C)
+        port map(clk,rst,en_j,clr_j,j,j_last);
+
+    K_CNT : entity work.counter generic map(N)
+        port map(clk,rst,en_k,clr_k,k,k_last);
+
+    MAC_U : entity work.mac
+        port map(clk,rst,en_k,clr_mac,a_sig,b_sig,mac_out);
+
+    CTRL : entity work.controller
+        port map(clk,rst,start,k_last,j_last,i_last,
+                 en_i,en_j,en_k,clr_k,clr_j,clr_mac,write_result,done);
+
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if write_result='1' then
+                result(i,j) <= mac_out;
+            end if;
+        end if;
+    end process;
+
+end architecture;
